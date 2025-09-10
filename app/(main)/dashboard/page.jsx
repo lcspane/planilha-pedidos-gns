@@ -1,0 +1,359 @@
+// app/(main)/dashboard/page.jsx
+"use client";
+
+import { useState, useEffect, useMemo } from "react";
+import { signOut, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { format, parse, isToday, isWithinInterval } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { LogOut, Loader2, User, Search, SlidersHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Toaster, toast } from "sonner";
+import { columns } from "../(components)/columns";
+import { DataTable } from "../(components)/data-table";
+import { PedidoForm } from "../(components)/pedido-form";
+import { StatsCards } from "../(components)/stats-cards";
+import { PedidoDetailsModal } from "../(components)/pedido-details-modal";
+import { AdvancedFilters } from "../(components)/advanced-filters";
+
+export default function DashboardPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [allData, setAllData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingPedido, setEditingPedido] = useState(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingPedidoId, setDeletingPedidoId] = useState(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [viewingPedido, setViewingPedido] = useState(null);
+  const currentMonthKey = format(new Date(), "MMMM-yyyy", { locale: ptBR });
+  const [monthFilter, setMonthFilter] = useState(currentMonthKey);
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({});
+
+  async function fetchData() {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/pedidos");
+      if (!response.ok) throw new Error("Falha ao buscar os dados.");
+      const pedidos = await response.json();
+      setAllData(pedidos);
+    } catch (error) {
+      console.error(error);
+      toast.error("Não foi possível carregar os pedidos.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const handleEdit = (pedido) => {
+    setEditingPedido(pedido);
+    setIsModalOpen(true);
+  };
+
+  const handleNew = () => {
+    setEditingPedido(null);
+    setIsModalOpen(true);
+  };
+
+  const openDeleteDialog = (id) => {
+    setDeletingPedidoId(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleOpenDetails = (pedido) => {
+    setViewingPedido(pedido);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingPedidoId) return;
+    try {
+      const response = await fetch(`/api/pedidos/${deletingPedidoId}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Falha ao deletar o pedido.");
+      toast.success("Pedido deletado com sucesso!");
+      fetchData();
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message);
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setDeletingPedidoId(null);
+    }
+  };
+
+  const handleFormSubmit = async (formData) => {
+    const isEditing = !!editingPedido;
+    const url = isEditing ? `/api/pedidos/${editingPedido.id}` : "/api/pedidos";
+    const method = isEditing ? "PUT" : "POST";
+    try {
+      const response = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData) });
+      if (!response.ok) throw new Error(`Falha ao ${isEditing ? 'atualizar' : 'criar'} o pedido.`);
+      toast.success(`Pedido ${isEditing ? 'atualizado' : 'criado'} com sucesso!`);
+      setIsModalOpen(false);
+      fetchData();
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message);
+    }
+  };
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetchData();
+    }
+  }, [status]);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
+
+  const uniqueMonths = useMemo(() => {
+    const monthSet = new Set(allData.map(p => format(new Date(p.data), "MMMM-yyyy", { locale: ptBR })));
+    monthSet.add(currentMonthKey);
+    return Array.from(monthSet).sort((a, b) => {
+      const dateA = parse(a, "MMMM-yyyy", new Date());
+      const dateB = parse(b, "MMMM-yyyy", new Date());
+      return dateA - dateB;
+    });
+  }, [allData, currentMonthKey]);
+
+  const filteredData = useMemo(() => {
+    let data = allData;
+    if (globalFilter) {
+      const filterText = globalFilter.toLowerCase();
+      return data.filter(p => p.cliente.toLowerCase().includes(filterText) || (p.contato && p.contato.toLowerCase().includes(filterText)) || (p.referencia && p.referencia.toLowerCase().includes(filterText)));
+    }
+    if (Object.values(activeFilters).some(v => v !== null && v !== undefined)) {
+      return data.filter(p => {
+        const { situacao, valorMin, valorMax, dateRange } = activeFilters;
+        if (situacao && p.situacao !== situacao) return false;
+        if (valorMin != null && p.valorTotal < valorMin) return false;
+        if (valorMax != null && p.valorTotal > valorMax) return false;
+        if (dateRange?.from && !dateRange.to) {
+          if (new Date(p.data) < dateRange.from) return false;
+        }
+        if (dateRange?.from && dateRange?.to) {
+          if (!isWithinInterval(new Date(p.data), { start: dateRange.from, end: dateRange.to })) return false;
+        }
+        return true;
+      });
+    }
+    return data.filter(p => format(new Date(p.data), "MMMM-yyyy", { locale: ptBR }) === monthFilter);
+  }, [allData, monthFilter, globalFilter, activeFilters]);
+
+  const followUpHoje = useMemo(() => {
+    return allData.filter(pedido => pedido.proximoContato && isToday(new Date(pedido.proximoContato)));
+  }, [allData]);
+
+  const memoizedColumns = useMemo(
+    () => columns(handleEdit, openDeleteDialog, handleOpenDetails),
+    []
+  );
+
+  const defaultDateForNew = useMemo(() => {
+    return parse(monthFilter, "MMMM-yyyy", new Date());
+  }, [monthFilter]);
+
+  const handleApplyFilters = (filters) => {
+    setActiveFilters(filters);
+    setGlobalFilter('');
+    setIsFiltersOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    setActiveFilters({});
+    setIsFiltersOpen(false);
+  };
+
+  const isAnyFilterActive = globalFilter || Object.values(activeFilters).some(v => v !== null && v !== undefined);
+
+  if (status === "loading" || isLoading) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <Loader2 className="h-16 w-16 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <header className="hidden h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6 flex-shrink-0 md:flex">
+        <div className="w-full flex-1">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Pesquisar pedidos..."
+              className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
+              value={globalFilter}
+              onChange={(e) => { setGlobalFilter(e.target.value); setActiveFilters({}); }}
+            />
+          </div>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => setIsFiltersOpen(true)}>
+          <SlidersHorizontal className="mr-2 h-4 w-4" />
+          Filtros
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="secondary" size="icon" className="rounded-full">
+              <User className="h-5 w-5" />
+              <span className="sr-only">Toggle user menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem disabled>{session?.user?.email}</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/' })}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Sair
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </header>
+      
+      <main className="flex-1 overflow-auto p-4 lg:p-6">
+        <div className="flex flex-col gap-4 lg:gap-6 h-full">
+          <div className="flex items-center flex-shrink-0">
+            <h1 className="text-lg font-semibold md:text-2xl">
+              {isAnyFilterActive ? 'Resultados dos Filtros' : 'Visão Geral Mensal'}
+            </h1>
+          </div>
+          
+          <Tabs
+            value={isAnyFilterActive ? '' : monthFilter}
+            onValueChange={setMonthFilter}
+            className="w-full flex flex-col flex-1"
+          >
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 flex-shrink-0">
+              {uniqueMonths.map((month) => (
+                <TabsTrigger
+                  key={month}
+                  value={month}
+                  disabled={isAnyFilterActive}
+                  className="capitalize"
+                >
+                  {month.replace('-', ' ')}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            <TabsContent
+              value={isAnyFilterActive ? '' : monthFilter}
+              className="mt-4 flex flex-col flex-1"
+            >
+              <div className="space-y-4 mb-4 flex-shrink-0">
+                <StatsCards data={filteredData} />
+                {followUpHoje.length > 0 && !isAnyFilterActive && (
+                  <Card className="bg-blue-50 border-blue-200">
+                    <CardHeader>
+                      <CardTitle className="text-blue-800">
+                        Follow-ups para Hoje ({followUpHoje.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="space-y-2">
+                        {followUpHoje.map(pedido => (
+                          <li key={pedido.id} className="text-sm">
+                            <span className="font-semibold text-blue-700">{pedido.cliente}</span>
+                            <span className="text-gray-600"> - Contato: {pedido.contato || 'N/A'}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+              <Card className="flex-1 flex flex-col">
+                <CardContent className="pt-6 flex-1 flex flex-col">
+                  <DataTable
+                    columns={memoizedColumns}
+                    data={filteredData}
+                    openNewModal={handleNew}
+                    className="flex-1"
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </main>
+      
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-[625px]">
+          <DialogHeader>
+            <DialogTitle>
+              {editingPedido ? "Editar Pedido" : "Adicionar Novo Pedido"}
+            </DialogTitle>
+          </DialogHeader>
+          <PedidoForm
+            pedido={editingPedido}
+            defaultDate={defaultDateForNew}
+            onSubmit={handleFormSubmit}
+            onCancel={() => setIsModalOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+      <PedidoDetailsModal
+        pedido={viewingPedido}
+        isOpen={isDetailsModalOpen}
+        onOpenChange={setIsDetailsModalOpen}
+      />
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+            <AlertDialogDescription>Essa ação não pode ser desfeita. Isso irá deletar permanentemente o pedido do servidor.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm}>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      <AdvancedFilters
+        isOpen={isFiltersOpen}
+        onOpenChange={setIsFiltersOpen}
+        onApplyFilters={handleApplyFilters}
+        onClearFilters={handleClearFilters}
+      />
+    </>
+  );
+}

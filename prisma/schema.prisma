@@ -1,0 +1,52 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// CORREÇÃO: Cada valor do enum agora está em sua própria linha
+enum Role {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ATIVO
+  BLOQUEADO
+}
+
+model Usuario {
+  id             Int        @id @default(autoincrement())
+  email          String     @unique
+  senhaHash      String
+  role           Role       @default(USER)
+  vendedorPadrao String
+  status         UserStatus @default(ATIVO)
+  sessionToken   String?
+}
+
+model Pedido {
+  id             Int       @id @default(autoincrement())
+  situacao       String
+  contato        String?
+  data           DateTime
+  cliente        String
+  referencia     String?
+  vendedor       String
+  valorTotal     Float
+  confirmado     String?
+  detalhes       String?
+  previsao       DateTime?
+  condPagamento  String?
+  proximoContato DateTime?
+}
+
+model AppConfig {
+  id                 String    @id @default(cuid())
+  maintenanceMode    Boolean   @default(false)
+  maintenanceMessage String?
+}
