@@ -8,7 +8,6 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-// CORREÇÃO: Cada valor do enum agora está em sua própria linha
 enum Role {
   USER
   ADMIN
@@ -26,7 +25,6 @@ model Usuario {
   role           Role       @default(USER)
   vendedorPadrao String
   status         UserStatus @default(ATIVO)
-  sessionToken   String?
 }
 
 model Pedido {

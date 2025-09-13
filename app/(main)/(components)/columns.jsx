@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { usePrivacy } from "./privacy-provider";
 
 const formatCurrency = (value) => {
   if (typeof value !== 'number') return "R$ 0,00";
@@ -16,6 +16,16 @@ const formatCurrency = (value) => {
 const extractRefNumber = (ref) => {
   if (!ref || typeof ref !== 'string') return '';
   return ref.replace(/\D/g, '');
+};
+
+const ValorTotalCell = ({ row }) => {
+  const { PrivateValue } = usePrivacy();
+  const amount = parseFloat(row.getValue("valorTotal"));
+  return (
+    <div className="text-right">
+      <PrivateValue>{formatCurrency(amount)}</PrivateValue>
+    </div>
+  );
 };
 
 export function columns(openEditModal, openDeleteDialog, openDetailsModal) {
@@ -32,19 +42,12 @@ export function columns(openEditModal, openDeleteDialog, openDetailsModal) {
     {
       accessorKey: "cliente",
       header: "Cliente",
-      // ALTERADO: Adicionamos .toUpperCase() para garantir a exibição em maiúsculas
-      cell: ({ row }) => {
-        const cliente = row.getValue("cliente");
-        return <div className="max-w-[250px] truncate">{cliente?.toUpperCase()}</div>;
-      },
+      cell: ({ row }) => <div className="max-w-[300px] truncate">{row.getValue("cliente")}</div>,
     },
     {
       accessorKey: "contato",
       header: "Contato",
-      cell: ({ row }) => {
-        const contato = row.getValue("contato");
-        return <div>{contato || '-'}</div>;
-      },
+      cell: ({ row }) => <div>{row.getValue("contato") || '-'}</div>,
     },
     {
       accessorKey: "referencia",
@@ -65,8 +68,7 @@ export function columns(openEditModal, openDeleteDialog, openDetailsModal) {
             className="cursor-pointer hover:underline focus:outline-none"
             title="Clique para copiar o número da referência"
           >
-            {/* ALTERADO: Adicionamos .toUpperCase() para garantir a exibição em maiúsculas */}
-            {fullReference ? fullReference.toUpperCase() : '-'}
+            {fullReference || '-'}
           </button>
         );
       },
@@ -74,18 +76,7 @@ export function columns(openEditModal, openDeleteDialog, openDetailsModal) {
     {
       accessorKey: "valorTotal",
       header: () => <div className="text-right">Valor Total</div>,
-      cell: ({ row }) => {
-        const situacao = row.original.situacao;
-        const amount = parseFloat(row.getValue("valorTotal"));
-        return (
-          <div className={cn(
-            "text-right",
-            situacao === 'Orçamento' ? 'font-normal' : 'font-bold'
-          )}>
-            {formatCurrency(amount)}
-          </div>
-        );
-      },
+      cell: ValorTotalCell,
     },
     {
       id: "actions",
@@ -97,7 +88,7 @@ export function columns(openEditModal, openDeleteDialog, openDetailsModal) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 hover:bg-zinc-200/50"
+              className="h-8 w-8"
               onClick={() => openDetailsModal(pedido)}
               title="Ver detalhes"
             >
@@ -106,7 +97,7 @@ export function columns(openEditModal, openDeleteDialog, openDetailsModal) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 hover:bg-zinc-200/50"
+              className="h-8 w-8"
               onClick={() => openEditModal(pedido)}
               title="Editar pedido"
             >
@@ -115,7 +106,7 @@ export function columns(openEditModal, openDeleteDialog, openDetailsModal) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100/50"
+              className="h-8 w-8 text-red-600 hover:text-red-700"
               onClick={() => openDeleteDialog(pedido.id)}
               title="Deletar pedido"
             >

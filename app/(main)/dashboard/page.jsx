@@ -7,33 +7,12 @@ import { useRouter } from "next/navigation";
 import { format, parse, isToday, isWithinInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { LogOut, Loader2, User, Search, SlidersHorizontal } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { LogOut, Loader2, User } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Toaster, toast } from "sonner";
 import { columns } from "../(components)/columns";
@@ -42,6 +21,7 @@ import { PedidoForm } from "../(components)/pedido-form";
 import { StatsCards } from "../(components)/stats-cards";
 import { PedidoDetailsModal } from "../(components)/pedido-details-modal";
 import { AdvancedFilters } from "../(components)/advanced-filters";
+import { Header } from "../(components)/header";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -143,8 +123,8 @@ export default function DashboardPage() {
     const monthSet = new Set(allData.map(p => format(new Date(p.data), "MMMM-yyyy", { locale: ptBR })));
     monthSet.add(currentMonthKey);
     return Array.from(monthSet).sort((a, b) => {
-      const dateA = parse(a, "MMMM-yyyy", new Date());
-      const dateB = parse(b, "MMMM-yyyy", new Date());
+      const dateA = parse(a, "MMMM-yyyy", new Date(), { locale: ptBR });
+      const dateB = parse(b, "MMMM-yyyy", new Date(), { locale: ptBR });
       return dateA - dateB;
     });
   }, [allData, currentMonthKey]);
@@ -183,7 +163,7 @@ export default function DashboardPage() {
   );
 
   const defaultDateForNew = useMemo(() => {
-    return parse(monthFilter, "MMMM-yyyy", new Date());
+    return parse(monthFilter, "MMMM-yyyy", new Date(), { locale: ptBR });
   }, [monthFilter]);
 
   const handleApplyFilters = (filters) => {
@@ -209,109 +189,74 @@ export default function DashboardPage() {
 
   return (
     <>
-      <header className="hidden h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6 flex-shrink-0 md:flex">
-        <div className="w-full flex-1">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Pesquisar pedidos..."
-              className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
-              value={globalFilter}
-              onChange={(e) => { setGlobalFilter(e.target.value); setActiveFilters({}); }}
-            />
+      <Header
+        globalFilter={globalFilter}
+        setGlobalFilter={setGlobalFilter}
+        setIsFiltersOpen={setIsFiltersOpen}
+      />
+      <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-xl font-semibold shrink-0 mb-4 sm:mb-0">
+            {isAnyFilterActive ? 'Resultados dos Filtros' : 'Visão Geral Mensal'}
+          </h1>
+          <div className="md:hidden w-full sm:w-auto">
+            <Select value={isAnyFilterActive ? '' : monthFilter} onValueChange={setMonthFilter} disabled={isAnyFilterActive}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o mês..." />
+              </SelectTrigger>
+              <SelectContent>
+                {uniqueMonths.map((month) => (
+                  <SelectItem key={month} value={month} className="capitalize">
+                    {month.replace('-', ' ')}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setIsFiltersOpen(true)}>
-          <SlidersHorizontal className="mr-2 h-4 w-4" />
-          Filtros
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="secondary" size="icon" className="rounded-full">
-              <User className="h-5 w-5" />
-              <span className="sr-only">Toggle user menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>{session?.user?.email}</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/' })}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Sair
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </header>
-      
-      <main className="flex-1 overflow-auto p-4 lg:p-6">
-        <div className="flex flex-col gap-4 lg:gap-6 h-full">
-          <div className="flex items-center flex-shrink-0">
-            <h1 className="text-lg font-semibold md:text-2xl">
-              {isAnyFilterActive ? 'Resultados dos Filtros' : 'Visão Geral Mensal'}
-            </h1>
-          </div>
-          
-          <Tabs
-            value={isAnyFilterActive ? '' : monthFilter}
-            onValueChange={setMonthFilter}
-            className="w-full flex flex-col flex-1"
-          >
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 flex-shrink-0">
+        <div className="hidden md:block">
+          <Tabs value={isAnyFilterActive ? '' : monthFilter} onValueChange={setMonthFilter}>
+            <TabsList>
               {uniqueMonths.map((month) => (
-                <TabsTrigger
-                  key={month}
-                  value={month}
-                  disabled={isAnyFilterActive}
-                  className="capitalize"
-                >
+                <TabsTrigger key={month} value={month} disabled={isAnyFilterActive} className="capitalize">
                   {month.replace('-', ' ')}
                 </TabsTrigger>
               ))}
             </TabsList>
-            <TabsContent
-              value={isAnyFilterActive ? '' : monthFilter}
-              className="mt-4 flex flex-col flex-1"
-            >
-              <div className="space-y-4 mb-4 flex-shrink-0">
-                <StatsCards data={filteredData} />
-                {followUpHoje.length > 0 && !isAnyFilterActive && (
-                  <Card className="bg-blue-50 border-blue-200">
-                    <CardHeader>
-                      <CardTitle className="text-blue-800">
-                        Follow-ups para Hoje ({followUpHoje.length})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-2">
-                        {followUpHoje.map(pedido => (
-                          <li key={pedido.id} className="text-sm">
-                            <span className="font-semibold text-blue-700">{pedido.cliente}</span>
-                            <span className="text-gray-600"> - Contato: {pedido.contato || 'N/A'}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-              <Card className="flex-1 flex flex-col">
-                <CardContent className="pt-6 flex-1 flex flex-col">
-                  <DataTable
-                    columns={memoizedColumns}
-                    data={filteredData}
-                    openNewModal={handleNew}
-                    className="flex-1"
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
           </Tabs>
         </div>
+        <div className="space-y-4">
+          <StatsCards data={filteredData} />
+          {followUpHoje.length > 0 && !isAnyFilterActive && (
+            <Card className="bg-blue-50 border-blue-200">
+              <CardHeader>
+                <CardTitle className="text-blue-800">
+                  Follow-ups para Hoje ({followUpHoje.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {followUpHoje.map(pedido => (
+                    <li key={pedido.id} className="text-sm">
+                      <span className="font-semibold text-blue-700">{pedido.cliente}</span>
+                      <span className="text-gray-600"> - Contato: {pedido.contato || 'N/A'}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+          <DataTable
+            columns={memoizedColumns}
+            data={filteredData}
+            openNewModal={handleNew}
+            onImportSuccess={fetchData}
+            handleOpenDetails={handleOpenDetails}
+            handleEdit={handleEdit}
+            handleDelete={openDeleteDialog}
+          />
+        </div>
       </main>
-      
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[625px]">
           <DialogHeader>
@@ -332,10 +277,7 @@ export default function DashboardPage() {
         isOpen={isDetailsModalOpen}
         onOpenChange={setIsDetailsModalOpen}
       />
-      <AlertDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-      >
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
@@ -347,7 +289,6 @@ export default function DashboardPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
       <AdvancedFilters
         isOpen={isFiltersOpen}
         onOpenChange={setIsFiltersOpen}

@@ -58,8 +58,10 @@ function AdminReportsView({ allData, allUsers, onUserChange, selectedUser, onOpe
                 <DataTable
                   columns={memoizedColumns}
                   data={filteredPedidos}
-                  openNewModal={() => {}}
-                  hideControls={true}
+                  hideControls={true} // Esconde filtro, importar, etc.
+                  handleOpenDetails={onOpenDetails} // Passa as funções para os cards mobile
+                  handleEdit={onOpenEdit}
+                  handleDelete={onOpenDelete}
                 />
               </CardContent>
             </Card>
@@ -132,21 +134,10 @@ export default function ReportsPage() {
     }
   }, [status, session]);
 
-  const handleEdit = (pedido) => {
-    setEditingPedido(pedido);
-    setIsModalOpen(true);
-  };
-
-  const openDeleteDialog = (id) => {
-    setDeletingPedidoId(id);
-    setIsDeleteDialogOpen(true);
-  };
+  const handleEdit = (pedido) => { setEditingPedido(pedido); setIsModalOpen(true); };
+  const openDeleteDialog = (id) => { setDeletingPedidoId(id); setIsDeleteDialogOpen(true); };
+  const handleOpenDetails = (pedido) => { setViewingPedido(pedido); setIsDetailsModalOpen(true); };
   
-  const handleOpenDetails = (pedido) => {
-    setViewingPedido(pedido);
-    setIsDetailsModalOpen(true);
-  };
-
   const handleFormSubmit = async (formData) => {
     const isEditing = !!editingPedido;
     const url = isEditing ? `/api/pedidos/${editingPedido.id}` : "/api/pedidos";
@@ -157,7 +148,7 @@ export default function ReportsPage() {
       if (!response.ok) throw new Error(result.error);
       toast.success(`Pedido ${isEditing ? 'atualizado' : 'criado'} com sucesso!`);
       setIsModalOpen(false);
-      fetchData(); // Recarrega os dados para refletir a mudança
+      fetchData();
     } catch (error) {
       toast.error(error.message);
     }
@@ -169,7 +160,7 @@ export default function ReportsPage() {
       const response = await fetch(`/api/pedidos/${deletingPedidoId}`, { method: 'DELETE' });
       if (!response.ok) throw new Error("Falha ao deletar o pedido.");
       toast.success("Pedido deletado com sucesso!");
-      fetchData(); // Recarrega os dados
+      fetchData();
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -177,14 +168,7 @@ export default function ReportsPage() {
     }
   };
 
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <Loader2 className="h-16 w-16 animate-spin" />
-      </div>
-    );
-  }
+  if (isLoading) { return <div className="flex justify-center items-center h-full"><Loader2 className="h-16 w-16 animate-spin" /></div>; }
 
   const isAdmin = session?.user?.role === 'ADMIN';
 
@@ -210,35 +194,17 @@ export default function ReportsPage() {
           <UserReportsView userData={allData} />
         )}
       </main>
-
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[625px]">
-          <DialogHeader>
-            <DialogTitle>Editar Pedido</DialogTitle>
-          </DialogHeader>
-          <PedidoForm
-            pedido={editingPedido}
-            defaultDate={editingPedido ? new Date(editingPedido.data) : new Date()}
-            onSubmit={handleFormSubmit}
-            onCancel={() => setIsModalOpen(false)}
-          />
+          <DialogHeader><DialogTitle>Editar Pedido</DialogTitle></DialogHeader>
+          <PedidoForm pedido={editingPedido} defaultDate={editingPedido ? new Date(editingPedido.data) : new Date()} onSubmit={handleFormSubmit} onCancel={() => setIsModalOpen(false)} />
         </DialogContent>
       </Dialog>
-      <PedidoDetailsModal
-        pedido={viewingPedido}
-        isOpen={isDetailsModalOpen}
-        onOpenChange={setIsDetailsModalOpen}
-      />
+      <PedidoDetailsModal pedido={viewingPedido} isOpen={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen} />
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-            <AlertDialogDescription>Deseja realmente excluir este pedido?</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm}>Excluir</AlertDialogAction>
-          </AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle><AlertDialogDescription>Deseja realmente excluir este pedido?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleDeleteConfirm}>Excluir</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
