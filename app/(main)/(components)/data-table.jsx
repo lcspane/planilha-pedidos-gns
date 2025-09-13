@@ -15,191 +15,104 @@ import { ImportModal } from "./import-modal";
 import { exportToExcel, exportToCSV, exportToPDF } from "@/lib/exportUtils";
 import { usePrivacy } from "./privacy-provider";
 
-const formatCurrency = (value) => {
-  if (typeof value !== 'number') return "R$ 0,00";
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-};
+const formatCurrency = (value) => { if (typeof value !== 'number') return "R$ 0,00"; return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); };
+const getBadgeVariant = (situacao) => { switch (situacao) { case "Finalizado": return "success"; case "Pendente": return "warning"; case "Cancelado": return "destructive"; default: return "secondary"; } };
+const getRowStyling = (situacao) => { switch (situacao) { case "Finalizado": return "bg-green-100/60 text-green-800 font-bold"; case "Pendente": return "bg-orange-100/60 text-orange-800 font-bold"; case "Cancelado": return "bg-red-100/60 text-red-800 font-bold"; default: return "font-normal"; } };
 
-const getRowStyling = (situacao) => {
-  switch (situacao) {
-    case "Finalizado":
-      return "bg-green-100/60 text-green-800 font-bold";
-    case "Pendente":
-      return "bg-orange-100/60 text-orange-800 font-bold";
-    case "Cancelado":
-      return "bg-red-100/60 text-red-800 font-bold";
-    case "Orçamento":
-    default:
-      return "font-normal";
-  }
-};
-
-const getBadgeVariant = (situacao) => {
-  switch (situacao) {
-    case "Finalizado":
-      return "success";
-    case "Pendente":
-      return "warning";
-    case "Cancelado":
-      return "destructive";
-    default:
-      return "secondary";
-  }
-};
-
-export function DataTable({ columns, data, openNewModal, onImportSuccess, handleOpenDetails, handleEdit, handleDelete }) {
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-  });
+export function DataTable({ columns, data, openNewModal, onImportSuccess, handleOpenDetails, handleEdit, handleDelete, hideControls = false }) {
+  const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel(), getPaginationRowModel: getPaginationRowModel() });
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const { PrivateValue } = usePrivacy();
 
   const handleExport = (format) => {
     const fileName = `pedidos_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}`;
-    if (format === 'excel') {
-      exportToExcel(data, fileName);
-    } else if (format === 'csv') {
-      exportToCSV(data, fileName);
-    } else if (format === 'pdf') {
-      exportToPDF(data, fileName);
-    }
+    if (format === 'excel') { exportToExcel(data, fileName); }
+    else if (format === 'csv') { exportToCSV(data, fileName); }
+    else if (format === 'pdf') { exportToPDF(data, fileName); }
   };
   
   return (
     <>
-      <div className="flex flex-col sm:flex-row items-center justify-end gap-2 py-4">
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Button variant="outline" onClick={() => setIsImportModalOpen(true)} className="w-full">
-            <Upload className="mr-2 h-4 w-4" />
-            Importar
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full">
-                <Download className="mr-2 h-4 w-4" />
-                Exportar
+      <div className="flex flex-col h-full">
+        {/* CORREÇÃO DEFINITIVA: Container principal dos controles com justify-between */}
+        {!hideControls && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
+            {/* Grupo de botões da esquerda */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button onClick={openNewModal} className="bg-zinc-900 text-white hover:bg-zinc-800 flex-1 sm:flex-none">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Adicionar
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => handleExport('excel')}>Excel (.xlsx)</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport('csv')}>CSV (.csv)</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport('pdf')}>PDF (.pdf)</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button onClick={openNewModal} className="bg-zinc-900 text-white hover:bg-zinc-800 w-full">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Adicionar
-          </Button>
+              <Button variant="outline" onClick={() => setIsImportModalOpen(true)} className="flex-1 sm:flex-none">
+                <Upload className="mr-2 h-4 w-4" />
+                Importar
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex-1 sm:flex-none">
+                    <Download className="mr-2 h-4 w-4" />
+                    Exportar
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => handleExport('excel')}>Excel (.xlsx)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('csv')}>CSV (.csv)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('pdf')}>PDF (.pdf)</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Grupo de botões da direita (Paginação) */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()} className="w-full">
+                Anterior
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()} className="w-full">
+                Próximo
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* O restante do componente (Tabela e Cards Mobile) permanece igual */}
+        <div className="hidden md:block rounded-md border flex-1 overflow-y-auto">
+          <Table>
+            <TableHeader className="sticky top-0 bg-secondary z-10">{table.getHeaderGroups().map(headerGroup => (<TableRow key={headerGroup.id}>{headerGroup.headers.map(header => (<TableHead key={header.id} className="whitespace-nowrap">{flexRender(header.column.columnDef.header, header.getContext())}</TableHead>))}</TableRow>))}</TableHeader>
+            <TableBody>{table.getRowModel().rows?.length ? (table.getRowModel().rows.map(row => (<TableRow key={row.id} className={cn(getRowStyling(row.original.situacao))}>{row.getVisibleCells().map(cell => (<TableCell key={cell.id} className="whitespace-nowrap">{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>))}</TableRow>))) : (<TableRow><TableCell colSpan={columns.length} className="h-24 text-center">Nenhum pedido encontrado.</TableCell></TableRow>)}</TableBody>
+          </Table>
+        </div>
+        
+        <div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 overflow-y-auto">
+          {table.getRowModel().rows?.length ? (
+            table.getRowModel().rows.map((row) => (
+              <Card key={row.id} className={cn("w-full", getRowStyling(row.original.situacao))}>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium truncate">{row.original.cliente}</CardTitle>
+                  <Badge variant={getBadgeVariant(row.original.situacao)}>{row.original.situacao}</Badge>
+                </CardHeader>
+                <CardContent className="space-y-1 text-sm">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Data:</span><span>{format(new Date(row.original.data), 'dd/MM/yyyy')}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Valor:</span><span className="font-bold"><PrivateValue>{formatCurrency(row.original.valorTotal)}</PrivateValue></span></div>
+                </CardContent>
+                <CardFooter className="flex justify-end gap-1 p-2">
+                  <Button variant="ghost" size="icon" onClick={() => handleOpenDetails(row.original)}><Eye className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)}><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDelete(row.original.id)} className="text-red-500"><Trash2 className="h-4 w-4" /></Button>
+                </CardFooter>
+              </Card>
+            ))
+          ) : (
+            <p className="col-span-full text-center text-muted-foreground py-10">Nenhum pedido encontrado.</p>
+          )}
+        </div>
+
+        {/* A paginação para o modo mobile pode ficar aqui */}
+        <div className="flex md:hidden items-center justify-end space-x-2 pt-4">
+          <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Anterior</Button>
+          <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Próximo</Button>
         </div>
       </div>
-
-      <div className="hidden md:block rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} className={cn(getRowStyling(row.original.situacao))}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  Nenhum pedido encontrado.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      
-      <div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {table.getRowModel().rows?.length ? (
-          table.getRowModel().rows.map((row) => (
-            <Card key={row.id} className={cn("w-full", getRowStyling(row.original.situacao))}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium truncate">
-                  {row.original.cliente}
-                </CardTitle>
-                <Badge variant={getBadgeVariant(row.original.situacao)}>
-                  {row.original.situacao}
-                </Badge>
-              </CardHeader>
-              <CardContent className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Data:</span>
-                  <span>{format(new Date(row.original.data), 'dd/MM/yyyy')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Valor:</span>
-                  <span className="font-bold">
-                    <PrivateValue>{formatCurrency(row.original.valorTotal)}</PrivateValue>
-                  </span>
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-end gap-1 p-2">
-                <Button variant="ghost" size="icon" onClick={() => handleOpenDetails(row.original)}>
-                  <Eye className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)}>
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(row.original.id)} className="text-red-500">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </CardFooter>
-            </Card>
-          ))
-        ) : (
-          <p className="col-span-full text-center text-muted-foreground py-10">
-            Nenhum pedido encontrado.
-          </p>
-        )}
-      </div>
-
-      <div className="flex items-center justify-end space-x-2 pt-4 flex-shrink-0">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Anterior
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Próximo
-        </Button>
-      </div>
-      <ImportModal isOpen={isImportModalOpen} onOpenChange={setIsImportModalOpen} onImportSuccess={onImportSuccess} />
+      {!hideControls && <ImportModal isOpen={isImportModalOpen} onOpenChange={setIsImportModalOpen} onImportSuccess={onImportSuccess} />}
     </>
   );
 }

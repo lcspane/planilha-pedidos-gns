@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from "sonner";
-import { usePrivacy } from "./privacy-provider";
+import { cn } from "@/lib/utils";
 
 const formatCurrency = (value) => {
   if (typeof value !== 'number') return "R$ 0,00";
@@ -16,16 +16,6 @@ const formatCurrency = (value) => {
 const extractRefNumber = (ref) => {
   if (!ref || typeof ref !== 'string') return '';
   return ref.replace(/\D/g, '');
-};
-
-const ValorTotalCell = ({ row }) => {
-  const { PrivateValue } = usePrivacy();
-  const amount = parseFloat(row.getValue("valorTotal"));
-  return (
-    <div className="text-right">
-      <PrivateValue>{formatCurrency(amount)}</PrivateValue>
-    </div>
-  );
 };
 
 export function columns(openEditModal, openDeleteDialog, openDetailsModal) {
@@ -76,7 +66,10 @@ export function columns(openEditModal, openDeleteDialog, openDetailsModal) {
     {
       accessorKey: "valorTotal",
       header: () => <div className="text-right">Valor Total</div>,
-      cell: ValorTotalCell,
+      cell: ({ row }) => {
+        const amount = parseFloat(row.getValue("valorTotal"));
+        return <div className="text-right">{formatCurrency(amount)}</div>;
+      },
     },
     {
       id: "actions",

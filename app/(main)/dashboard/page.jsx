@@ -7,12 +7,40 @@ import { useRouter } from "next/navigation";
 import { format, parse, isToday, isWithinInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { LogOut, Loader2, User } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { LogOut, Loader2, User, Search, SlidersHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Toaster, toast } from "sonner";
 import { columns } from "../(components)/columns";
@@ -153,6 +181,23 @@ export default function DashboardPage() {
     return data.filter(p => format(new Date(p.data), "MMMM-yyyy", { locale: ptBR }) === monthFilter);
   }, [allData, monthFilter, globalFilter, activeFilters]);
 
+  const cardTotals = useMemo(() => {
+    return filteredData.reduce((acc, pedido) => {
+      const valor = pedido.valorTotal || 0;
+      if (pedido.situacao === 'Finalizado') {
+        acc.confirmado += valor;
+      } else if (pedido.situacao === 'Cancelado') {
+        acc.cancelado += valor;
+      } else if (pedido.situacao === 'Pendente') {
+        acc.pendente += valor;
+      }
+      if (pedido.situacao !== 'Cancelado') {
+        acc.total += valor;
+      }
+      return acc;
+    }, { total: 0, cancelado: 0, pendente: 0, confirmado: 0 });
+  }, [filteredData]);
+
   const followUpHoje = useMemo(() => {
     return allData.filter(pedido => pedido.proximoContato && isToday(new Date(pedido.proximoContato)));
   }, [allData]);
@@ -226,7 +271,7 @@ export default function DashboardPage() {
           </Tabs>
         </div>
         <div className="space-y-4">
-          <StatsCards data={filteredData} />
+          <StatsCards totals={cardTotals} />
           {followUpHoje.length > 0 && !isAnyFilterActive && (
             <Card className="bg-blue-50 border-blue-200">
               <CardHeader>

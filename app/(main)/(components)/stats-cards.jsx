@@ -11,29 +11,34 @@ const formatCurrency = (value) => {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
 
-export function StatsCards({ data }) {
+export function StatsCards({ totals }) {
   const { PrivateValue } = usePrivacy();
 
-  const totais = data.reduce((acc, pedido) => {
-    const valor = pedido.valorTotal || 0;
-    if (pedido.situacao === 'Finalizado') {
-      acc.confirmado += valor;
-    } else if (pedido.situacao === 'Cancelado') {
-      acc.cancelado += valor;
-    } else if (pedido.situacao === 'Pendente') {
-      acc.pendente += valor;
-    }
-    if (pedido.situacao !== 'Cancelado') {
-      acc.total += valor;
-    }
-    return acc;
-  }, { total: 0, cancelado: 0, pendente: 0, confirmado: 0 });
-
   const cardData = [
-    { title: "Total (Válidos)", value: totais.total, icon: DollarSign, colorClass: "border-gray-500" },
-    { title: "Total Cancelado", value: totais.cancelado, icon: XCircle, colorClass: "border-red-500" },
-    { title: "Total Pendente", value: totais.pendente, icon: Clock, colorClass: "border-orange-500" },
-    { title: "Total Confirmado", value: totais.confirmado, icon: CheckCircle2, colorClass: "border-green-500" },
+    {
+      title: "Total (Válidos)",
+      value: totals.total,
+      icon: DollarSign,
+      colorClass: "border-gray-500",
+    },
+    {
+      title: "Total Cancelado",
+      value: totals.cancelado,
+      icon: XCircle,
+      colorClass: "border-red-500",
+    },
+    {
+      title: "Total Pendente",
+      value: totals.pendente,
+      icon: Clock,
+      colorClass: "border-orange-500",
+    },
+    {
+      title: "Total Confirmado",
+      value: totals.confirmado,
+      icon: CheckCircle2,
+      colorClass: "border-green-500",
+    },
   ];
 
   return (
@@ -41,7 +46,9 @@ export function StatsCards({ data }) {
       {cardData.map((card, index) => (
         <Card key={index} className={cn("rounded-lg border-2", card.colorClass)}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{card.title}</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {card.title}
+            </CardTitle>
             <card.icon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
