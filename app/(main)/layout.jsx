@@ -21,6 +21,8 @@ import { PrivacyProvider } from "./(components)/privacy-provider";
 export default function DashboardLayout({ children }) {
   const { status } = useSession();
   const [isSessionExpired, setIsSessionExpired] = useState(false);
+
+  // Estados agora vivem aqui, como a única fonte da verdade
   const [globalFilter, setGlobalFilter] = useState('');
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
@@ -38,14 +40,15 @@ export default function DashboardLayout({ children }) {
     localStorage.setItem('logoutReason', 'Sua sessão expirou.');
     signOut({ callbackUrl: '/login' });
   };
-
+  
+  // Clona a página filha (ex: dashboard/page.jsx) e injeta as props
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
-      return React.cloneElement(child, {
-        globalFilter: globalFilter,
-        isFiltersOpen: isFiltersOpen,
-        setIsFiltersOpen: setIsFiltersOpen,
-        setGlobalFilter: setGlobalFilter,
+      return React.cloneElement(child, { 
+        globalFilter,
+        isFiltersOpen,
+        setIsFiltersOpen,
+        setGlobalFilter,
       });
     }
     return child;
