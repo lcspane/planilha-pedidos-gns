@@ -2,9 +2,10 @@
 "use client";
 
 import { useState } from "react";
-import { flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from "@tanstack/react-table";
+import { flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, useReactTable } from "@tanstack/react-table";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -20,7 +21,19 @@ const getBadgeVariant = (situacao) => { switch (situacao) { case "Finalizado": r
 const getRowStyling = (situacao) => { switch (situacao) { case "Finalizado": return "bg-green-100/60 text-green-800 font-bold"; case "Pendente": return "bg-orange-100/60 text-orange-800 font-bold"; case "Cancelado": return "bg-red-100/60 text-red-800 font-bold"; default: return "font-normal"; } };
 
 export function DataTable({ columns, data, openNewModal, onImportSuccess, handleOpenDetails, handleEdit, handleDelete, hideControls = false }) {
-  const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel(), getPaginationRowModel: getPaginationRowModel() });
+  const [columnFilters, setColumnFilters] = useState([]);
+  const table = useReactTable({
+    data,
+    columns,
+    state: {
+      columnFilters,
+    },
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+  });
+  
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const { PrivateValue } = usePrivacy();
 
@@ -34,22 +47,27 @@ export function DataTable({ columns, data, openNewModal, onImportSuccess, handle
   return (
     <>
       <div className="flex flex-col h-full">
-        {/* CORREÇÃO DEFINITIVA: Container principal dos controles com justify-between */}
+        {/* CORREÇÃO: Container de controles acima da tabela */}
         {!hideControls && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
-            {/* Grupo de botões da esquerda */}
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Button onClick={openNewModal} className="bg-zinc-900 text-white hover:bg-zinc-800 flex-1 sm:flex-none">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-4">
+            <Input
+              placeholder="Filtrar por cliente..."
+              value={(table.getColumn("cliente")?.getFilterValue()) ?? ""}
+              onChange={(event) => table.getColumn("cliente")?.setFilterValue(event.target.value)}
+              className="w-full md:max-w-sm"
+            />
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <Button onClick={openNewModal} className="bg-zinc-900 text-white hover:bg-zinc-800 flex-1 md:flex-none">
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Adicionar
+                Adicionar Pedido
               </Button>
-              <Button variant="outline" onClick={() => setIsImportModalOpen(true)} className="flex-1 sm:flex-none">
+              <Button variant="outline" onClick={() => setIsImportModalOpen(true)} className="flex-1 md:flex-none">
                 <Upload className="mr-2 h-4 w-4" />
                 Importar
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex-1 sm:flex-none">
+                  <Button variant="outline" className="flex-1 md:flex-none">
                     <Download className="mr-2 h-4 w-4" />
                     Exportar
                   </Button>
@@ -61,28 +79,23 @@ export function DataTable({ columns, data, openNewModal, onImportSuccess, handle
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-
-            {/* Grupo de botões da direita (Paginação) */}
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()} className="w-full">
-                Anterior
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()} className="w-full">
-                Próximo
-              </Button>
-            </div>
           </div>
         )}
 
-        {/* O restante do componente (Tabela e Cards Mobile) permanece igual */}
-        <div className="hidden md:block rounded-md border flex-1 overflow-y-auto">
+        {/* Container da Tabela (Desktop) com scroll */}
+        <div className="hidden md:block rounded-md border flex-1 overflow-auto">
           <Table>
-            <TableHeader className="sticky top-0 bg-secondary z-10">{table.getHeaderGroups().map(headerGroup => (<TableRow key={headerGroup.id}>{headerGroup.headers.map(header => (<TableHead key={header.id} className="whitespace-nowrap">{flexRender(header.column.columnDef.header, header.getContext())}</TableHead>))}</TableRow>))}</TableHeader>
-            <TableBody>{table.getRowModel().rows?.length ? (table.getRowModel().rows.map(row => (<TableRow key={row.id} className={cn(getRowStyling(row.original.situacao))}>{row.getVisibleCells().map(cell => (<TableCell key={cell.id} className="whitespace-nowrap">{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>))}</TableRow>))) : (<TableRow><TableCell colSpan={columns.length} className="h-24 text-center">Nenhum pedido encontrado.</TableCell></TableRow>)}</TableBody>
+            <TableHeader className="sticky top-0 bg-secondary z-10">
+              {table.getHeaderGroups().map(headerGroup => (<TableRow key={headerGroup.id}>{headerGroup.headers.map(header => (<TableHead key={header.id} className="whitespace-nowrap">{flexRender(header.column.columnDef.header, header.getContext())}</TableHead>))}</TableRow>))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (table.getRowModel().rows.map(row => (<TableRow key={row.id} className={cn(getRowStyling(row.original.situacao))}>{row.getVisibleCells().map(cell => (<TableCell key={cell.id} className="whitespace-nowrap">{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>))}</TableRow>))) : (<TableRow><TableCell colSpan={columns.length} className="h-24 text-center">Nenhum pedido encontrado.</TableCell></TableRow>)}
+            </TableBody>
           </Table>
         </div>
         
-        <div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 overflow-y-auto">
+        {/* Container dos Cards (Mobile) com scroll */}
+        <div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 overflow-auto">
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
               <Card key={row.id} className={cn("w-full", getRowStyling(row.original.situacao))}>
@@ -106,8 +119,8 @@ export function DataTable({ columns, data, openNewModal, onImportSuccess, handle
           )}
         </div>
 
-        {/* A paginação para o modo mobile pode ficar aqui */}
-        <div className="flex md:hidden items-center justify-end space-x-2 pt-4">
+        {/* Container da Paginação (Abaixo da tabela) */}
+        <div className="flex items-center justify-end space-x-2 pt-4 flex-shrink-0">
           <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Anterior</Button>
           <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Próximo</Button>
         </div>

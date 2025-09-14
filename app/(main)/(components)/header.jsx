@@ -28,13 +28,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader, // NOVO: Importando o Header do Sheet
-  SheetTitle,  // NOVO: Importando o Título do Sheet
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export function Header({ globalFilter, setGlobalFilter, setIsFiltersOpen }) {
   const { data: session } = useSession();
@@ -86,13 +80,7 @@ export function Header({ globalFilter, setGlobalFilter, setIsFiltersOpen }) {
               <span className="sr-only">Abrir menu de navegação</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left">
-            {/* CORREÇÃO: Adicionamos um título para acessibilidade */}
-            <SheetHeader>
-              <SheetTitle className="sr-only">Menu Principal</SheetTitle>
-            </SheetHeader>
-            {navLinks}
-          </SheetContent>
+          <SheetContent side="left">{navLinks}</SheetContent>
         </Sheet>
       </div>
       

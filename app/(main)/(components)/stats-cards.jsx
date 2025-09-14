@@ -11,7 +11,11 @@ const formatCurrency = (value) => {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
 
-export function StatsCards({ totals }) {
+// CORREÇÃO DEFINITIVA: Adicionamos um valor padrão para a prop 'totals'
+// Se 'totals' chegar como 'undefined', este objeto será usado, evitando o crash.
+const defaultTotals = { total: 0, cancelado: 0, pendente: 0, confirmado: 0 };
+
+export function StatsCards({ totals = defaultTotals }) {
   const { PrivateValue } = usePrivacy();
 
   const cardData = [
@@ -42,13 +46,12 @@ export function StatsCards({ totals }) {
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    // Grid aprimorado para melhor responsividade
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
       {cardData.map((card, index) => (
         <Card key={index} className={cn("rounded-lg border-2", card.colorClass)}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {card.title}
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{card.title}</CardTitle>
             <card.icon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
