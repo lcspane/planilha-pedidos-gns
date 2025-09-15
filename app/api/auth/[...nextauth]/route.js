@@ -4,7 +4,8 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-export const authOptions = {
+// A palavra "export" foi REMOVIDA daqui
+const authOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -54,13 +55,11 @@ export const authOptions = {
   ],
   session: {
     strategy: "jwt",
-    // Para manter a sessão por 30 dias (padrão)
-    // Se quiser voltar para 15 minutos, descomente a linha abaixo
     maxAge: 30 * 60,
   },
   pages: {
     signIn: "/login",
-    error: '/login', // Para exibir erros customizados na página de login
+    error: '/login',
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -83,5 +82,6 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
+// Esta parte já estava correta
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
