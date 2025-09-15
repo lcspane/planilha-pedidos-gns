@@ -1,5 +1,5 @@
 // app/(main)/layout.jsx
-"use client";
+'use client';
 
 import { Sidebar } from "./(components)/sidebar";
 import { Header } from "./(components)/header";
