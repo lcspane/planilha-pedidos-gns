@@ -12,7 +12,7 @@ async function isAdmin() {
 }
 
 // GET: Listar todos os usuários (só para admins)
-export async function GET(request) {
+export async function GET() {
   if (!await isAdmin()) {
     return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
   }

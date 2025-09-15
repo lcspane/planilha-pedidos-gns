@@ -36,7 +36,7 @@ export async function PUT(request, { params }) {
       data: updateData,
     });
     
-    const { senhaHash: _, ...userToReturn } = updatedUser;
+    const { senhaHash, ...userToReturn } = updatedUser;
     return NextResponse.json(userToReturn);
   } catch (error) {
     console.error(`Erro ao atualizar usuário ${id}:`, error);

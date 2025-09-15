@@ -8,7 +8,7 @@ import { createHash } from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request) {
+export async function GET() {
   const session = await getServerSession(authOptions);
   if (session?.user?.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
