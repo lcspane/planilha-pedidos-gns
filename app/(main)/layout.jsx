@@ -1,7 +1,6 @@
 // app/(main)/layout.jsx
 "use client";
 
-import React from "react";
 import { Sidebar } from "./(components)/sidebar";
 import { Header } from "./(components)/header";
 import { Toaster } from "sonner";
@@ -17,16 +16,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { PrivacyProvider } from "./(components)/privacy-provider";
+import { AppProvider } from "./(components)/app-provider"; // NOVO
 
 export default function DashboardLayout({ children }) {
   const { status } = useSession();
   const [isSessionExpired, setIsSessionExpired] = useState(false);
-
-  const [globalFilter, setGlobalFilter] = useState('');
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  
-  // CORREÇÃO: O estado 'activeFilters' agora vive aqui, no layout.
-  const [activeFilters, setActiveFilters] = useState({});
 
   useEffect(() => {
     const checkStatus = () => {
@@ -43,34 +37,18 @@ export default function DashboardLayout({ children }) {
     signOut({ callbackUrl: '/login' });
   };
   
-  // Passamos todos os estados e funções de filtro para as páginas filhas
-  const childrenWithProps = React.Children.map(children, child => {
-    if (React.isValidElement(child)) {
-      return React.cloneElement(child, { 
-        globalFilter,
-        setGlobalFilter,
-        isFiltersOpen,
-        setIsFiltersOpen,
-        activeFilters,
-        setActiveFilters,
-      });
-    }
-    return child;
-  });
-
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[224px_1fr] lg:grid-cols-[280px_1fr]">
       <Sidebar />
       <div className="flex flex-col">
         <Toaster position="top-right" richColors />
-        <PrivacyProvider>
-          <Header
-            globalFilter={globalFilter}
-            setGlobalFilter={setGlobalFilter}
-            setIsFiltersOpen={setIsFiltersOpen}
-          />
-          {childrenWithProps}
-        </PrivacyProvider>
+        {/* Envolvemos tudo com os provedores, na ordem correta */}
+        <AppProvider>
+          <PrivacyProvider>
+            <Header />
+            {children}
+          </PrivacyProvider>
+        </AppProvider>
       </div>
       <AlertDialog open={isSessionExpired}>
         <AlertDialogContent>
