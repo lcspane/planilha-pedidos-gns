@@ -34,23 +34,47 @@ export function Sidebar() {
             <span>GNS Pedidos</span>
           </Link>
         </div>
-        <div className="flex-1 overflow-auto py-2">
+        <div className="flex-1 overflow-auto py-4">
           <nav className="grid items-start px-4 text-sm font-medium">
-            <Link href="/dashboard" className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary", pathname === "/dashboard" && "bg-muted text-primary")}>
+            <Link
+              href="/dashboard"
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                pathname === "/dashboard" && "bg-muted text-primary"
+              )}
+            >
               <Home className="h-4 w-4" />
               Dashboard
             </Link>
-            <Link href="/dashboard/reports" className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary", pathname === "/dashboard/reports" && "bg-muted text-primary")}>
+            <Link
+              href="/dashboard/reports"
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                pathname === "/dashboard/reports" && "bg-muted text-primary"
+              )}
+            >
               <LineChart className="h-4 w-4" />
               Relatórios
             </Link>
             {isAdmin && (
-              <Link href="/dashboard/users" className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary", pathname === "/dashboard/users" && "bg-muted text-primary")}>
+              <Link
+                href="/dashboard/users"
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                  pathname === "/dashboard/users" && "bg-muted text-primary"
+                )}
+              >
                 <Users className="h-4 w-4" />
                 Usuários
               </Link>
             )}
-            <Link href="/dashboard/settings" className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary", pathname === "/dashboard/settings" && "bg-muted text-primary")}>
+            <Link
+              href="/dashboard/settings"
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                pathname === "/dashboard/settings" && "bg-muted text-primary"
+              )}
+            >
               <Settings className="h-4 w-4" />
               Configurações
             </Link>
@@ -77,9 +101,7 @@ export function Sidebar() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => signOut({ callbackUrl: '/' })}>
-              Sair
-            </AlertDialogAction>
+            <AlertDialogAction onClick={() => signOut({ callbackUrl: '/' })}>Sair</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

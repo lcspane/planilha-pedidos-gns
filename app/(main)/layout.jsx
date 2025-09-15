@@ -22,9 +22,11 @@ export default function DashboardLayout({ children }) {
   const { status } = useSession();
   const [isSessionExpired, setIsSessionExpired] = useState(false);
 
-  // Estados agora vivem aqui, como a única fonte da verdade
   const [globalFilter, setGlobalFilter] = useState('');
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  
+  // CORREÇÃO: O estado 'activeFilters' agora vive aqui, no layout.
+  const [activeFilters, setActiveFilters] = useState({});
 
   useEffect(() => {
     const checkStatus = () => {
@@ -41,14 +43,16 @@ export default function DashboardLayout({ children }) {
     signOut({ callbackUrl: '/login' });
   };
   
-  // Clona a página filha (ex: dashboard/page.jsx) e injeta as props
+  // Passamos todos os estados e funções de filtro para as páginas filhas
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
       return React.cloneElement(child, { 
         globalFilter,
+        setGlobalFilter,
         isFiltersOpen,
         setIsFiltersOpen,
-        setGlobalFilter,
+        activeFilters,
+        setActiveFilters,
       });
     }
     return child;

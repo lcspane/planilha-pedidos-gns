@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useSession } from "next-auth/react";
+import { useSession } from "next-auth/react"; // A CORREÇÃO ESTÁ AQUI
 import { useRouter } from "next/navigation";
 import { format, parse, isToday, isWithinInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -20,8 +20,7 @@ import { StatsCards } from "../(components)/stats-cards";
 import { PedidoDetailsModal } from "../(components)/pedido-details-modal";
 import { AdvancedFilters } from "../(components)/advanced-filters";
 
-// A página agora recebe as props do layout
-export default function DashboardPage({ globalFilter, isFiltersOpen, setIsFiltersOpen, setGlobalFilter }) {
+export default function DashboardPage({ globalFilter, isFiltersOpen, setIsFiltersOpen, setGlobalFilter, activeFilters, setActiveFilters }) {
   const { status } = useSession();
   const router = useRouter();
   const [allData, setAllData] = useState([]);
@@ -34,9 +33,22 @@ export default function DashboardPage({ globalFilter, isFiltersOpen, setIsFilter
   const [viewingPedido, setViewingPedido] = useState(null);
   const currentMonthKey = format(new Date(), "MMMM-yyyy", { locale: ptBR });
   const [monthFilter, setMonthFilter] = useState(currentMonthKey);
-  const [activeFilters, setActiveFilters] = useState({});
 
-  async function fetchData() { setIsLoading(true); try { const response = await fetch("/api/pedidos"); if (!response.ok) throw new Error("Falha ao buscar os dados."); const pedidos = await response.json(); setAllData(pedidos); } catch (error) { console.error(error); toast.error("Não foi possível carregar os pedidos."); } finally { setIsLoading(false); } }
+  async function fetchData() {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/pedidos");
+      if (!response.ok) throw new Error("Falha ao buscar os dados.");
+      const pedidos = await response.json();
+      setAllData(pedidos);
+    } catch (error) {
+      console.error(error);
+      toast.error("Não foi possível carregar os pedidos.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   const handleEdit = (pedido) => { setEditingPedido(pedido); setIsModalOpen(true); };
   const handleNew = () => { setEditingPedido(null); setIsModalOpen(true); };
   const openDeleteDialog = (id) => { setDeletingPedidoId(id); setIsDeleteDialogOpen(true); };
@@ -47,17 +59,26 @@ export default function DashboardPage({ globalFilter, isFiltersOpen, setIsFilter
   useEffect(() => { if (status === "authenticated") { fetchData(); } }, [status]);
   useEffect(() => { if (status === "unauthenticated") { router.push("/login"); } }, [status, router]);
 
-  const uniqueMonths = useMemo(() => { const monthSet = new Set(allData.map(p => format(new Date(p.data), "MMMM-yyyy", { locale: ptBR }))); monthSet.add(currentMonthKey); return Array.from(monthSet).sort((a, b) => { const dateA = parse(a, "MMMM-yyyy", new Date(), { locale: ptBR }); const dateB = parse(b, "MMMM-yyyy", new Date(), { locale: ptBR }); return dateA - dateB; }); }, [allData, currentMonthKey]);
-  
+  const uniqueMonths = useMemo(() => {
+    const monthSet = new Set(allData.map(p => format(new Date(p.data), "MMMM-yyyy", { locale: ptBR })));
+    monthSet.add(currentMonthKey);
+    return Array.from(monthSet).sort((a, b) => {
+      const dateA = parse(a, "MMMM-yyyy", new Date(), { locale: ptBR });
+      const dateB = parse(b, "MMMM-yyyy", new Date(), { locale: ptBR });
+      return dateA - dateB;
+    });
+  }, [allData, currentMonthKey]);
+
   const filteredData = useMemo(() => {
     let data = allData;
+    const currentFilters = activeFilters || {};
     if (globalFilter) {
       const filterText = globalFilter.toLowerCase();
       return data.filter(p => p.cliente.toLowerCase().includes(filterText) || (p.contato && p.contato.toLowerCase().includes(filterText)) || (p.referencia && p.referencia.toLowerCase().includes(filterText)));
     }
-    if (Object.values(activeFilters).some(v => v !== null && v !== undefined)) {
+    if (Object.values(currentFilters).some(v => v !== null && v !== undefined)) {
       return data.filter(p => {
-        const { situacao, valorMin, valorMax, dateRange } = activeFilters;
+        const { situacao, valorMin, valorMax, dateRange } = currentFilters;
         if (situacao && p.situacao !== situacao) return false;
         if (valorMin != null && p.valorTotal < valorMin) return false;
         if (valorMax != null && p.valorTotal > valorMax) return false;
@@ -83,9 +104,10 @@ export default function DashboardPage({ globalFilter, isFiltersOpen, setIsFilter
   const followUpHoje = useMemo(() => { return allData.filter(pedido => pedido.proximoContato && isToday(new Date(pedido.proximoContato))); }, [allData]);
   const memoizedColumns = useMemo(() => columns(handleEdit, openDeleteDialog, handleOpenDetails), []);
   const defaultDateForNew = useMemo(() => { return parse(monthFilter, "MMMM-yyyy", new Date(), { locale: ptBR }); }, [monthFilter]);
-  const handleApplyFilters = (filters) => { setActiveFilters(filters); if (setGlobalFilter) { setGlobalFilter(''); } setIsFiltersOpen(false); };
+  
+  const handleApplyFilters = (filters) => { setActiveFilters(filters); setGlobalFilter(''); setIsFiltersOpen(false); };
   const handleClearFilters = () => { setActiveFilters({}); setIsFiltersOpen(false); };
-  const isAnyFilterActive = globalFilter || Object.values(activeFilters).some(v => v !== null && v !== undefined);
+  const isAnyFilterActive = globalFilter || Object.values(activeFilters || {}).some(v => v !== null && v !== undefined);
 
   if (status === "loading" || isLoading) { return (<div className="flex justify-center items-center flex-1"><Loader2 className="h-16 w-16 animate-spin" /></div>); }
 
@@ -96,19 +118,12 @@ export default function DashboardPage({ globalFilter, isFiltersOpen, setIsFilter
           <h1 className="text-lg font-semibold">{isAnyFilterActive ? 'Resultados dos Filtros' : 'Visão Geral Mensal'}</h1>
         </div>
         <div className="md:hidden">
-          <Select value={isAnyFilterActive ? '' : monthFilter} onValueChange={setMonthFilter} disabled={isAnyFilterActive}>
-            <SelectTrigger><SelectValue placeholder="Selecione o mês..." /></SelectTrigger>
-            <SelectContent>{uniqueMonths.map((month) => (<SelectItem key={month} value={month} className="capitalize">{month.replace('-', ' ')}</SelectItem>))}</SelectContent>
-          </Select>
+          <Select value={isAnyFilterActive ? '' : monthFilter} onValueChange={setMonthFilter} disabled={isAnyFilterActive}><SelectTrigger><SelectValue placeholder="Selecione o mês..." /></SelectTrigger><SelectContent>{uniqueMonths.map((month) => (<SelectItem key={month} value={month} className="capitalize">{month.replace('-', ' ')}</SelectItem>))}</SelectContent></Select>
         </div>
         <div className="hidden md:block">
-          <Tabs value={isAnyFilterActive ? '' : monthFilter} onValueChange={setMonthFilter}>
-            <TabsList className="overflow-x-auto whitespace-nowrap justify-start">
-              {uniqueMonths.map((month) => (<TabsTrigger key={month} value={month} disabled={isAnyFilterActive} className="capitalize">{month.replace('-', ' ')}</TabsTrigger>))}
-            </TabsList>
-          </Tabs>
+          <Tabs value={isAnyFilterActive ? '' : monthFilter} onValueChange={setMonthFilter}><TabsList className="overflow-x-auto whitespace-nowrap justify-start">{uniqueMonths.map((month) => (<TabsTrigger key={month} value={month} disabled={isAnyFilterActive} className="capitalize">{month.replace('-', ' ')}</TabsTrigger>))}</TabsList></Tabs>
         </div>
-        <div className="space-y-6">
+        <div className="space-y-6 pb-8">
           <StatsCards totals={cardTotals} />
           {followUpHoje.length > 0 && !isAnyFilterActive && (<Card className="bg-blue-50 border-blue-200"><CardHeader><CardTitle className="text-blue-800">Follow-ups para Hoje ({followUpHoje.length})</CardTitle></CardHeader><CardContent><ul className="space-y-2">{followUpHoje.map(pedido => (<li key={pedido.id} className="text-sm"><span className="font-semibold text-blue-700">{pedido.cliente}</span><span className="text-gray-600"> - Contato: {pedido.contato || 'N/A'}</span></li>))}</ul></CardContent></Card>)}
           <DataTable columns={memoizedColumns} data={filteredData} openNewModal={handleNew} onImportSuccess={fetchData} handleOpenDetails={handleOpenDetails} handleEdit={handleEdit} handleDelete={openDeleteDialog} />

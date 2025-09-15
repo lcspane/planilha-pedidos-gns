@@ -5,16 +5,19 @@ import Providers from "./providers";
 
 const inter = Inter({ subsets: ["latin"] });
 
-// ALTERADO: Adicionamos a metatag 'viewport' para controlar o zoom
+// O objeto 'metadata' agora contém apenas o título e a descrição.
 export const metadata = {
   title: "Planilha de Pedidos",
   description: "GNS - Lucas Pane",
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1, // Impede que o usuário dê zoom
-    userScalable: false, // Garante que o zoom seja desabilitado
-  },
+};
+
+// CORREÇÃO: As configurações de viewport agora são exportadas separadamente.
+// Esta é a nova sintaxe recomendada pelo Next.js.
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }) {
