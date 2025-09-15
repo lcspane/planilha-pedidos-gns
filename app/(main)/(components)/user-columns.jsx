@@ -1,5 +1,5 @@
 // app/(main)/(components)/user-columns.jsx
-"use client";
+'use client';
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

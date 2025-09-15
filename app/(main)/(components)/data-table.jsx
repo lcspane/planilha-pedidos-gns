@@ -1,5 +1,5 @@
 // app/(main)/(components)/data-table.jsx
-"use client";
+'use client';
 
 import { useState } from "react";
 import { flexRender, getCoreRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";

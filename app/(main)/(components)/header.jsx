@@ -1,5 +1,5 @@
 // app/(main)/(components)/header.jsx
-"use client";
+'use client';
 
 import { useSession, signOut } from "next-auth/react";
 import { usePrivacy } from "./privacy-provider";

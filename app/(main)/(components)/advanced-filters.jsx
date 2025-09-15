@@ -1,5 +1,5 @@
 // app/(main)/(components)/advanced-filters.jsx
-"use client";
+'use client';
 
 import { useState } from "react";
 import { format } from "date-fns";

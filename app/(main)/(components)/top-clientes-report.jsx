@@ -1,5 +1,5 @@
 // app/(main)/(components)/top-clientes-report.jsx
-"use client";
+'use client';
 
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardDescription, CardTitle } from "@/components/ui/card";

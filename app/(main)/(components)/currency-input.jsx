@@ -1,5 +1,5 @@
 // app/(main)/(components)/currency-input.jsx
-"use client";
+'use client';
 
 import React from 'react';
 import { Input } from "@/components/ui/input";

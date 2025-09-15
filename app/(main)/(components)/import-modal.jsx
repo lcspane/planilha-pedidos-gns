@@ -1,5 +1,5 @@
 // app/(main)/(components)/import-modal.jsx
-"use client";
+'use client';
 
 import { useState } from "react";
 import Papa from "papaparse";

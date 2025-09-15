@@ -1,5 +1,5 @@
 // app/(components)/pedidos-chart.jsx
-"use client";
+'use client';
 
 import { Bar, BarChart, Pie, PieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Cell } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

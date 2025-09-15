@@ -1,5 +1,5 @@
 // app/(main)/(components)/app-provider.jsx
-"use client";
+'use client';
 
 import React, { createContext, useState, useContext } from 'react';
 
