@@ -1,5 +1,5 @@
 // app/(main)/dashboard/users/page.jsx
-"use client";
+'use client';
 
 import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
