@@ -1,7 +1,7 @@
 // app/api/backup/route.js
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from "@/lib/auth";
 import { promises as fs } from 'fs';
 import path from 'path';
 import { createHash } from 'crypto';

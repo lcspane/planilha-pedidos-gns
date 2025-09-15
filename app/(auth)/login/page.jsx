@@ -1,5 +1,5 @@
 // app/(auth)/login/page.jsx
-"use client";
+'use client';
 
 import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
