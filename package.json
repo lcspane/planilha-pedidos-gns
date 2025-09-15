@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start",
-    "lint": "eslint",
-    "prisma:seed": "node scripts/seed.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "litestream replicate -exec 'node_modules/.bin/next start'",
+    "lint": "next lint",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "node scripts/seed.js"

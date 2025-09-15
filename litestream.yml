@@ -1,0 +1,10 @@
+# litestream.yml
+dbs:
+  - path: /tmp/dev.db # Caminho onde a Vercel armazena o DB temporário
+    replicas:
+      - type: s3
+        bucket: planilha-gns-backup-lcspane
+        region: us-west-004 # Ex: us-west-004
+        endpoint: s3.us-west-004.backblazeb2.com # Ex: s3.us-west-004.backblazeb2.com
+        access-key-id: 00533e4a20f37010000000001
+        secret-access-key: K0050kmk/4/QfzjAlZ50kgepMd+etI4

@@ -14,10 +14,10 @@ export default function SplashPage() {
     <div className="flex h-screen w-full items-center justify-center bg-black p-10 flex-col text-center">
       <Building2 className="h-16 w-16 text-white mb-6" />
       <h1 className="mt-6 text-4xl font-bold text-white">
-        GNS - Gestão de Pedidos
+        GNS - Gestão de Orçamentos
       </h1>
       <p className="mt-4 max-w-lg text-lg text-zinc-400">
-        Uma solução interna criada por Lucas Pane para otimizar o fluxo de vendas.
+        Uma solução interna criada por Lucas Pane para otimizar a fluxo de vendas e orçamentos.
       </p>
       <div className="mt-10 flex gap-4">
         {isLoading ? (

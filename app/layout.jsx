@@ -7,8 +7,8 @@ const inter = Inter({ subsets: ["latin"] });
 
 // O objeto 'metadata' agora contém apenas o título e a descrição.
 export const metadata = {
-  title: "Planilha de Pedidos",
-  description: "GNS - Lucas Pane",
+  title: "Gestão de Orçamentos",
+  description: "GNS - Gás Norte",
 };
 
 // CORREÇÃO: As configurações de viewport agora são exportadas separadamente.

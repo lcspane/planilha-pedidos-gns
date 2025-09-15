@@ -77,9 +77,9 @@ export default function LoginPage() {
           <div className="mx-auto w-full max-w-md space-y-8">
             <div className="flex flex-col items-center text-center">
               <Package className="h-12 w-12 text-primary" />
-              <h1 className="mt-6 text-3xl font-bold">Planilha de Pedidos</h1>
+              <h1 className="mt-6 text-3xl font-bold">Gestão de Orçamentos</h1>
               <p className="mt-2 text-muted-foreground">
-                GNS - Lucas Pane
+                GNS - Gás Norte
               </p>
             </div>
             
